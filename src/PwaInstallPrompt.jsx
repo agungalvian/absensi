@@ -6,20 +6,22 @@ export default function PwaInstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // Detect iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
     const handleBeforeInstallPrompt = (e) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
-      // Update UI notify the user they can install the PWA
       setIsVisible(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Check if the app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsVisible(false);
+    // If iOS and not installed, show a special instruction
+    if (isIOS && !isStandalone) {
+      // Small delay to ensure smooth UI
+      setTimeout(() => setIsVisible(true), 2000);
     }
 
     return () => {
@@ -28,23 +30,20 @@ export default function PwaInstallPrompt() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     
-    // Show the install prompt
-    deferredPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      console.log('User accepted the PWA install prompt');
-    } else {
-      console.log('User dismissed the PWA install prompt');
+    if (isIOS) {
+      alert('Untuk menginstal di iPhone/iPad:\n1. Klik tombol "Share" (kotak dengan panah atas)\n2. Pilih "Add to Home Screen" atau "Tambah ke Layar Utama"');
+      return;
     }
-    
-    // We've used the prompt, and can't use it again, throw it away
+
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsVisible(false);
+    }
     setDeferredPrompt(null);
-    setIsVisible(false);
   };
 
   if (!isVisible) return null;

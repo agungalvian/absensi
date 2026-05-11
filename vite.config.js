@@ -7,16 +7,21 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      },
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'Absensi Karyawan',
-        short_name: 'Absensi',
-        description: 'Sistem Absensi Karyawan Geofencing',
+        name: 'Absensi Karyawan GCK',
+        short_name: 'Absensi GCK',
+        description: 'Sistem Absensi Karyawan Geofencing GCK',
         theme_color: '#E87F24',
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
+        scope: '/',
+        orientation: 'portrait',
         icons: [
           {
             src: '/pwa-192x192.png',
@@ -29,6 +34,22 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/absensi\.alvian\.web\.id\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              }
+            }
           }
         ]
       }
