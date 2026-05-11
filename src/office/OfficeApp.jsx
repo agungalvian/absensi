@@ -337,9 +337,9 @@ function EmployeeManagement() {
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input 
                         type="checkbox" 
-                        checked={formData.roles.includes('pegawai')}
+                        checked={(formData.roles || '').includes('pegawai')}
                         onChange={(e) => {
-                          const rolesArr = formData.roles.split(',').map(r => r.trim()).filter(Boolean);
+                          const rolesArr = (formData.roles || '').split(',').map(r => r.trim()).filter(Boolean);
                           if (e.target.checked) {
                             if (!rolesArr.includes('pegawai')) rolesArr.push('pegawai');
                           } else {
@@ -354,9 +354,9 @@ function EmployeeManagement() {
                     <label className="flex items-center gap-2 text-sm cursor-pointer">
                       <input 
                         type="checkbox" 
-                        checked={formData.roles.includes('admin')}
+                        checked={(formData.roles || '').includes('admin')}
                         onChange={(e) => {
-                          const rolesArr = formData.roles.split(',').map(r => r.trim()).filter(Boolean);
+                          const rolesArr = (formData.roles || '').split(',').map(r => r.trim()).filter(Boolean);
                           if (e.target.checked) {
                             if (!rolesArr.includes('admin')) rolesArr.push('admin');
                           } else {
