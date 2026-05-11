@@ -491,7 +491,7 @@ function SettingsComponent() {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        if (Object.keys(data).length > 0) {
+        if (data && Object.keys(data).length > 0) {
           if (!data.offices && data.lat) {
             data.offices = [{ id: 1, name: 'Kantor Utama', address: '-', lat: data.lat, lng: data.lng }];
           }
@@ -570,7 +570,7 @@ function SettingsComponent() {
               <div key={office.id} className="p-4 border border-border rounded-lg mb-4 bg-background">
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="font-semibold text-primary">Kantor {idx + 1}</h4>
-                  {settings.offices.length > 1 && (
+                  {(settings?.offices?.length || 0) > 1 && (
                     <button type="button" className="btn btn-danger p-2 text-xs" onClick={() => removeOffice(office.id)}>Hapus</button>
                   )}
                 </div>
