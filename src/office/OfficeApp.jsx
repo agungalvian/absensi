@@ -269,20 +269,25 @@ function EmployeeManagement() {
             </tr>
           </thead>
           <tbody>
-            {employees.map((emp) => (
-              <tr key={emp.nip}>
-                <td>{emp.nip}</td>
-                <td>{emp.name}</td>
-                <td>{emp.department}</td>
-                <td>{emp.position}</td>
-                <td>{emp.roles}</td>
-                <td>{new Date(emp.join_date).toLocaleDateString()}</td>
+            {(employees || []).map((emp) => (
+              <tr key={emp?.nip || Math.random()}>
+                <td>{emp?.nip || '-'}</td>
+                <td>{emp?.name || '-'}</td>
+                <td>{emp?.department || '-'}</td>
+                <td>{emp?.position || '-'}</td>
+                <td>{emp?.roles || '-'}</td>
+                <td>{emp?.join_date ? new Date(emp.join_date).toLocaleDateString() : '-'}</td>
                 <td>
                   <button className="btn btn-secondary p-2 text-xs mr-2" onClick={() => openEdit(emp)}>Edit</button>
-                  <button className="btn btn-danger p-2 text-xs" onClick={() => handleDelete(emp.nip)}>Hapus</button>
+                  <button className="btn btn-danger p-2 text-xs" onClick={() => handleDelete(emp?.nip)}>Hapus</button>
                 </td>
               </tr>
             ))}
+            {(!employees || employees.length === 0) && (
+              <tr>
+                <td colSpan="7" className="p-8 text-center text-muted">Belum ada data pegawai.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -433,20 +438,20 @@ function LeaveApproval() {
             </tr>
           </thead>
           <tbody>
-            {leaves.map((l) => (
-              <tr key={l.id}>
-                <td>{l.employee_name} ({l.nip})</td>
-                <td>{l.leave_type}</td>
-                <td>{new Date(l.start_date).toLocaleDateString()}</td>
-                <td>{new Date(l.end_date).toLocaleDateString()}</td>
-                <td>{l.reason}</td>
+            {(leaves || []).map((l) => (
+              <tr key={l?.id || Math.random()}>
+                <td>{l?.employee_name || '-'} ({l?.nip || '-'})</td>
+                <td>{l?.leave_type || '-'}</td>
+                <td>{l?.start_date ? new Date(l.start_date).toLocaleDateString() : '-'}</td>
+                <td>{l?.end_date ? new Date(l.end_date).toLocaleDateString() : '-'}</td>
+                <td>{l?.reason || '-'}</td>
                 <td>
-                  <span className={`status-badge ${l.status === 'Approved' ? 'status-success' : l.status === 'Rejected' ? 'status-danger' : 'status-warning'}`}>
-                    {l.status}
+                  <span className={`status-badge ${l?.status === 'Approved' ? 'status-success' : l?.status === 'Rejected' ? 'status-danger' : 'status-warning'}`}>
+                    {l?.status || 'Pending'}
                   </span>
                 </td>
                 <td>
-                  {l.status === 'Pending' && (
+                  {l?.status === 'Pending' && (
                     <div className="flex gap-2">
                       <button className="btn btn-secondary p-2 text-xs" onClick={() => handleAction(l.id, 'Approved')}>Setuju</button>
                       <button className="btn btn-danger p-2 text-xs" onClick={() => handleAction(l.id, 'Rejected')}>Tolak</button>
@@ -455,6 +460,11 @@ function LeaveApproval() {
                 </td>
               </tr>
             ))}
+            {(!leaves || leaves.length === 0) && (
+              <tr>
+                <td colSpan="7" className="p-8 text-center text-muted">Belum ada pengajuan cuti/izin.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -637,16 +647,16 @@ function SettingsComponent() {
               </tr>
             </thead>
             <tbody>
-              {holidays.map(h => (
-                <tr key={h.id} className="border-t border-border">
-                  <td className="p-3">{new Date(h.holiday_date).toLocaleDateString()}</td>
-                  <td className="p-3">{h.description}</td>
+              {(holidays || []).map(h => (
+                <tr key={h?.id || Math.random()} className="border-t border-border">
+                  <td className="p-3">{h?.holiday_date ? new Date(h.holiday_date).toLocaleDateString() : '-'}</td>
+                  <td className="p-3">{h?.description || '-'}</td>
                   <td className="p-3 text-right">
                     <button className="btn btn-danger text-xs p-2" onClick={() => handleDeleteHoliday(h.id)}>Hapus</button>
                   </td>
                 </tr>
               ))}
-              {holidays.length === 0 && (
+              {(!holidays || holidays.length === 0) && (
                 <tr>
                   <td colSpan="3" className="p-4 text-center text-muted">Belum ada hari libur.</td>
                 </tr>
