@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS employees (
   leave_carry_over INTEGER DEFAULT 0
 );
 
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'Pegawai123';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS roles VARCHAR(100) DEFAULT 'pegawai';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS manager_nip VARCHAR(50);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS leave_quota INTEGER DEFAULT 12;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS leave_carry_over INTEGER DEFAULT 0;
+
 -- Add self-reference for manager
 ALTER TABLE employees ADD CONSTRAINT fk_manager FOREIGN KEY (manager_nip) REFERENCES employees(nip) ON DELETE SET NULL;
 
