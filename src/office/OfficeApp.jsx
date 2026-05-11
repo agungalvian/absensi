@@ -661,8 +661,8 @@ function SettingsComponent() {
 
 export default function OfficeApp() {
   const [isAdmin, setIsAdmin] = useState(localStorage.getItem('isAdmin') === 'true');
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(localStorage.getItem('loggedInUser') || 'admin');
   const navigate = useNavigate();
