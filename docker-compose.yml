@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    image: node:20-alpine
+    container_name: absensi-app
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "3200:3000"
+      - "3201:3201"
+    command: sh -c "npm install && npx concurrently \"npm run dev -- --host 0.0.0.0 --port 3000\" \"node server.js\""
+    environment:
+      - NODE_ENV=development
+      - DB_USER=postgres
+      - DB_PASSWORD=Admin123
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=absensi
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: absensi-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Admin123
+      - POSTGRES_DB=absensi
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  pgdata:
