@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { MapPin, Clock, Calendar, User, LogOut, CheckCircle, AlertTriangle, List, Lock } from 'lucide-react';
 
 function MobileLogin({ onLogin }) {
@@ -660,6 +660,7 @@ export default function MobileApp() {
     <div className="mobile-view">
       <div className="flex-1 overflow-y-auto">
         <Routes>
+          <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<MobileHome user={user} onChangePassword={() => setShowChangePassword(true)} />} />
           <Route path="/leaves" element={<LeavesComponent user={user} />} />
           <Route path="/history" element={<HistoryComponent user={user} />} />
