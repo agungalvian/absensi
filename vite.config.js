@@ -35,6 +35,10 @@ export default defineConfig({
   ],
   server: {
     allowedHosts: ['absensi.alvian.web.id'],
+    hmr: {
+      clientPort: 443,
+      host: 'absensi.alvian.web.id'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3201',
