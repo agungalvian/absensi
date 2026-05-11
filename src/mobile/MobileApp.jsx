@@ -416,22 +416,22 @@ function LeavesComponent({ user }) {
 
       <h3 className="font-bold mb-4">Riwayat Pengajuan</h3>
       <div className="flex flex-col gap-4">
-        {leaves.map(l => (
-          <div key={l.id} className="card p-4">
+        {(leaves || []).map(l => (
+          <div key={l?.id || Math.random()} className="card p-4">
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h4 className="font-semibold">{l.leave_type}</h4>
-                <p className="text-xs text-muted">{new Date(l.start_date).toLocaleDateString()} - {new Date(l.end_date).toLocaleDateString()}</p>
+                <h4 className="font-semibold">{l?.leave_type || '-'}</h4>
+                <p className="text-xs text-muted">{l?.start_date ? new Date(l.start_date).toLocaleDateString() : '-'} - {l?.end_date ? new Date(l.end_date).toLocaleDateString() : '-'}</p>
               </div>
-              <span className={`status-badge ${l.status === 'Approved' ? 'status-success' : l.status === 'Rejected' ? 'status-danger' : 'status-warning'}`}>
-                {l.status}
+              <span className={`status-badge ${l?.status === 'Approved' ? 'status-success' : l?.status === 'Rejected' ? 'status-danger' : 'status-warning'}`}>
+                {l?.status || 'Pending'}
               </span>
             </div>
-            <p className="text-sm mt-2">{l.reason}</p>
-            {l.delegate_nip && <p className="text-xs text-primary mt-2">Pjs: {l.delegate_nip}</p>}
+            <p className="text-sm mt-2">{l?.reason || '-'}</p>
+            {l?.delegate_nip && <p className="text-xs text-primary mt-2">Pjs: {l.delegate_nip}</p>}
           </div>
         ))}
-        {leaves.length === 0 && <p className="text-center text-muted">Belum ada riwayat pengajuan</p>}
+        {(!leaves || leaves.length === 0) && <p className="text-center text-muted">Belum ada riwayat pengajuan</p>}
       </div>
     </div>
   );
@@ -446,7 +446,10 @@ function HistoryComponent({ user }) {
   const fetchHistory = () => {
     fetch(`/api/attendance/me/${user.nip}`)
       .then(res => res.json())
-      .then(data => setLogs(data));
+      .then(data => {
+        if (Array.isArray(data)) setLogs(data);
+        else setLogs([]);
+      });
   };
 
   useEffect(() => {

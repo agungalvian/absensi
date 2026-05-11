@@ -193,7 +193,10 @@ function EmployeeManagement() {
   const fetchEmployees = () => {
     fetch('/api/employees')
       .then(res => res.json())
-      .then(data => setEmployees(data))
+      .then(data => {
+        if (Array.isArray(data)) setEmployees(data);
+        else setEmployees([]);
+      })
       .catch(err => console.error(err));
   };
 
@@ -400,7 +403,10 @@ function LeaveApproval() {
   const fetchLeaves = () => {
     fetch('/api/leaves')
       .then(res => res.json())
-      .then(data => setLeaves(data))
+      .then(data => {
+        if (Array.isArray(data)) setLeaves(data);
+        else setLeaves([]);
+      })
       .catch(err => console.error(err));
   };
 
@@ -484,7 +490,12 @@ function SettingsComponent() {
   const [newHoliday, setNewHoliday] = useState({ holiday_date: '', description: '' });
 
   const fetchHolidays = () => {
-    fetch('/api/holidays').then(res => res.json()).then(data => setHolidays(data));
+    fetch('/api/holidays')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setHolidays(data);
+        else setHolidays([]);
+      });
   };
 
   useEffect(() => {
