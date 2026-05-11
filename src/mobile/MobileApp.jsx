@@ -627,12 +627,29 @@ export default function MobileApp() {
     if (!user && location.pathname !== '/') {
       navigate('/');
     }
+    
+    // Handle Hardware Back Button
+    const handleBack = (e) => {
+      // If we are on home page, we want to let the app close (OS handles this)
+      // If we are on leaves or history, go back to home
+      if (location.pathname === '/home') {
+        // No-op, let default back behavior happen (exit PWA)
+        return;
+      } else if (location.pathname !== '/') {
+        // Prevent default and go home
+        e.preventDefault();
+        navigate('/home');
+      }
+    };
+
+    window.addEventListener('popstate', handleBack);
+    return () => window.removeEventListener('popstate', handleBack);
   }, [user, location, navigate]);
 
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem('mobile_user');
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   if (!user) {
@@ -649,7 +666,7 @@ export default function MobileApp() {
         </Routes>
       </div>
       <div className="bottom-nav">
-        <div className={`nav-item ${location.pathname === '/home' ? 'active' : ''}`} onClick={() => navigate('/home')}>
+        <div className={`nav-item ${location.pathname === '/home' ? 'active' : ''}`} onClick={() => navigate('/home', { replace: true })}>
           <Clock size={24} />
           <span>Absen</span>
         </div>
