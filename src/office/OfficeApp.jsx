@@ -139,11 +139,11 @@ function Dashboard() {
         </div>
         <div className="card text-center flex flex-col items-center">
           <h3 className="text-muted mb-2">Sedang Cuti/Izin</h3>
-          <p className="text-3xl font-bold text-primary">{stats.onLeave}</p>
+          <p className="text-3xl font-bold text-primary">{stats?.onLeave || 0}</p>
         </div>
         <div className="card text-center flex flex-col items-center">
           <h3 className="text-muted mb-2">Tanpa Keterangan</h3>
-          <p className="text-3xl font-bold text-danger">{Math.max(0, stats.totalEmployees - stats.presentToday - stats.onLeave)}</p>
+          <p className="text-3xl font-bold text-danger">{Math.max(0, (stats?.totalEmployees || 0) - (stats?.presentToday || 0) - (stats?.onLeave || 0))}</p>
         </div>
       </div>
       
@@ -159,19 +159,19 @@ function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {stats.recentActivity.map(act => (
+            {(stats?.recentActivity || []).map(act => (
               <tr key={act.id} className="border-t border-border hover:bg-surface-hover/50 transition-colors">
-                <td className="p-4 font-semibold">{act.employee_name}</td>
-                <td className="p-4">{new Date(act.timestamp).toLocaleTimeString('id-ID')}</td>
+                <td className="p-4 font-semibold">{act?.employee_name || '-'}</td>
+                <td className="p-4">{act?.timestamp ? new Date(act.timestamp).toLocaleTimeString('id-ID') : '-'}</td>
                 <td className="p-4">
-                  <span className={`status-badge ${act.type === 'in' ? 'status-success' : 'status-danger'}`}>
-                    {act.type === 'in' ? 'Masuk' : 'Pulang'}
+                  <span className={`status-badge ${act?.type === 'in' ? 'status-success' : 'status-danger'}`}>
+                    {act?.type === 'in' ? 'Masuk' : 'Pulang'}
                   </span>
                 </td>
-                <td className="p-4 text-sm text-muted">{act.office_name} ({act.distance_meters}m)</td>
+                <td className="p-4 text-sm text-muted">{act?.office_name} ({act?.distance_meters}m)</td>
               </tr>
             ))}
-            {stats.recentActivity.length === 0 && (
+            {(!stats?.recentActivity || stats.recentActivity.length === 0) && (
               <tr>
                 <td colSpan="4" className="p-8 text-center text-muted">Belum ada aktivitas hari ini</td>
               </tr>
