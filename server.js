@@ -183,12 +183,21 @@ app.put('/api/employees/:nip', async (req, res) => {
   const { nip } = req.params;
   const { name, department, position, join_date, password, roles, manager_nip, leave_quota, leave_carry_over } = req.body;
   try {
-    await pool.query(
-      'UPDATE employees SET name=$1, department=$2, position=$3, join_date=$4, password=$5, roles=$6, manager_nip=$7, leave_quota=$8, leave_carry_over=$9 WHERE nip=$10',
-      [name, department, position, join_date, password, roles, manager_nip || null, leave_quota || 12, leave_carry_over || 0, nip]
-    );
+    let query;
+    let params;
+    
+    if (password && password.trim() !== '') {
+      query = 'UPDATE employees SET name=$1, department=$2, position=$3, join_date=$4, password=$5, roles=$6, manager_nip=$7, leave_quota=$8, leave_carry_over=$9 WHERE nip=$10';
+      params = [name, department, position, join_date, password, roles, manager_nip || null, leave_quota || 12, leave_carry_over || 0, nip];
+    } else {
+      query = 'UPDATE employees SET name=$1, department=$2, position=$3, join_date=$4, roles=$5, manager_nip=$6, leave_quota=$7, leave_carry_over=$8 WHERE nip=$9';
+      params = [name, department, position, join_date, roles, manager_nip || null, leave_quota || 12, leave_carry_over || 0, nip];
+    }
+    
+    await pool.query(query, params);
     res.json({ success: true });
   } catch (err) {
+    console.error('Update Employee Error:', err);
     res.status(500).json({ error: err.message });
   }
 });
