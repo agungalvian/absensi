@@ -233,7 +233,14 @@ function EmployeeManagement() {
   };
 
   const openEdit = (emp) => {
-    setFormData({ ...emp, join_date: new Date(emp.join_date).toISOString().split('T')[0] });
+    let joinDate = '';
+    if (emp.join_date) {
+      const d = new Date(emp.join_date);
+      if (!isNaN(d.getTime())) {
+        joinDate = d.toISOString().split('T')[0];
+      }
+    }
+    setFormData({ ...emp, join_date: joinDate });
     setIsEdit(true);
     setShowModal(true);
   };
