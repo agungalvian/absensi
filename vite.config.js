@@ -34,6 +34,7 @@ export default defineConfig({
     })
   ],
   server: {
+    allowedHosts: ['absensi.alvian.web.id'],
     proxy: {
       '/api': {
         target: 'http://localhost:3201',
