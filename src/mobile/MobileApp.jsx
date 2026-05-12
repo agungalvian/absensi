@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { MapPin, Clock, Calendar, User, LogOut, CheckCircle, AlertTriangle, List, Lock } from 'lucide-react';
+import { MapPin, Clock, Calendar, User, LogOut, CheckCircle, AlertTriangle, List, Lock, RefreshCw } from 'lucide-react';
 
 function MobileLogin({ onLogin }) {
   const [nip, setNip] = useState('');
@@ -109,27 +109,30 @@ function MobileHome({ user, onChangePassword }) {
   const [targetOffice, setTargetOffice] = useState(null);
   const [currentAddress, setCurrentAddress] = useState('Mencari alamat...');
   const [todayLogs, setTodayLogs] = useState([]);
+  const [lastSync, setLastSync] = useState(new Date());
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Load settings from API
+  const fetchSettings = () => {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
         const appSettings = (data && typeof data === 'object' && Object.keys(data).length > 0) ? data : { lat: -6.2088, lng: 106.8456, radius: 50, offices: [] };
         setSettings(appSettings);
-        startTracking(appSettings);
+        setLastSync(new Date());
       })
-      .catch(err => {
-        console.error(err);
-        startTracking({ lat: -6.2088, lng: 106.8456, radius: 50, offices: [] }); // fallback
-      });
+      .catch(err => console.error(err));
+  };
 
+  useEffect(() => {
+    fetchSettings();
+    const syncInterval = setInterval(fetchSettings, 30000);
+    
     const checkStatus = () => {
       fetch(`/api/attendance/me/${user.nip}`)
         .then(res => res.json())
         .then(data => {
-          const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+          if (!Array.isArray(data)) return;
+          const today = new Date().toLocaleDateString('en-CA');
           const logs = data.filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === today);
           setTodayLogs(logs);
 
@@ -142,7 +145,7 @@ function MobileHome({ user, onChangePassword }) {
           } else {
             setStatus(logs.some(l => l.type === 'in') ? 'done_in' : 'ready_in');
           }
-        });
+        }).catch(() => {});
     };
 
     if (settings.shiftEnd) checkStatus();
@@ -157,7 +160,6 @@ function MobileHome({ user, onChangePassword }) {
           const userLng = position.coords.longitude;
           setUserPos({ lat: userLat, lng: userLng });
 
-          // Reverse Geocoding
           fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&zoom=18&addressdetails=1`)
             .then(res => res.json())
             .then(data => {
@@ -170,11 +172,11 @@ function MobileHome({ user, onChangePassword }) {
           let closestDist = Infinity;
           let closestOffice = null;
 
-          const offices = Array.isArray(appSettings.offices) && appSettings.offices.length > 0 
+          const currentOffices = Array.isArray(appSettings.offices) && appSettings.offices.length > 0 
             ? appSettings.offices 
             : [{ name: 'Kantor Utama', lat: Number(appSettings.lat), lng: Number(appSettings.lng) }];
 
-          offices.forEach(office => {
+          currentOffices.forEach(office => {
             const dist = getDistance(userLat, userLng, Number(office.lat), Number(office.lng));
             if (dist < closestDist) {
               closestDist = dist;
@@ -183,26 +185,23 @@ function MobileHome({ user, onChangePassword }) {
           });
 
           setDistance(Math.round(closestDist));
-          setUserPos({ lat: userLat, lng: userLng });
           setTargetOffice(closestOffice);
 
           const radius = Number(appSettings.radius) || 50;
           if (closestDist <= radius) {
             setIsWithinRadius(true);
             setLocationError(false);
-            setLocationStatus(`Dalam Radius ${closestOffice.name || 'Kantor'} (Jarak: ${Math.round(closestDist)}m)`);
+            setLocationStatus(`Berada di ${closestOffice.name || 'Kantor'}`);
           } else {
             setIsWithinRadius(false);
             setLocationError(false);
-            setLocationStatus(`Di Luar Radius (Jarak ke ${closestOffice.name || 'Kantor'}: ${Math.round(closestDist)}m / ${radius}m)`);
+            setLocationStatus(`Di Luar Radius ${closestOffice.name || 'Kantor'}`);
           }
         }, (error) => {
           let errorMsg = 'Gagal mendapatkan lokasi. Aktifkan GPS.';
           if (error.code === error.PERMISSION_DENIED) {
             errorMsg = 'Akses Lokasi Ditolak. Harap izinkan GPS di browser Anda.';
             setLocationError(true);
-          } else {
-            setLocationError(false);
           }
           setLocationStatus(errorMsg);
           setIsWithinRadius(false);
@@ -213,19 +212,19 @@ function MobileHome({ user, onChangePassword }) {
       }
     }
 
+    startTracking(settings);
+
     return () => {
       clearInterval(timer);
+      clearInterval(syncInterval);
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
-  }, [settings]); // Re-run whenever settings change (e.g. new offices added)
+  }, [settings, user.nip]);
 
   const handleAttend = async () => {
     if (status === 'done_in' || status === 'done_out') return;
-
-    const now = new Date();
-    const currentHourMin = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    const type = (settings.shiftEnd && currentHourMin >= settings.shiftEnd) ? 'out' : 'in';
-
+    const type = status === 'ready_in' ? 'in' : 'out';
+    
     try {
       const res = await fetch('/api/attendance', {
         method: 'POST',
@@ -242,10 +241,10 @@ function MobileHome({ user, onChangePassword }) {
       const data = await res.json();
       if (data.success) {
         setStatus(type === 'in' ? 'done_in' : 'done_out');
-        // Re-fetch today's logs to update UI
         fetch(`/api/attendance/me/${user.nip}`)
           .then(res => res.json())
           .then(data => {
+            if (!Array.isArray(data)) return;
             const today = new Date().toLocaleDateString('en-CA');
             setTodayLogs(data.filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === today));
           });
@@ -261,13 +260,22 @@ function MobileHome({ user, onChangePassword }) {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="font-bold text-xl">Halo, {user.name}</h2>
-          <p className="text-sm">{user.position}</p>
+          <p className="text-xs opacity-70">Terakhir update: {lastSync.toLocaleTimeString('id-ID')}</p>
         </div>
-        <div 
-          className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center cursor-pointer border border-border/30 hover:border-primary/50 transition-colors"
-          onClick={onChangePassword}
-        >
-          <User size={20} className="text-primary" />
+        <div className="flex gap-2">
+          <div 
+            className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center cursor-pointer border border-border/30"
+            onClick={fetchSettings}
+            title="Refresh Data"
+          >
+            <RefreshCw size={18} className="text-primary" />
+          </div>
+          <div 
+            className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center cursor-pointer border border-border/30"
+            onClick={onChangePassword}
+          >
+            <User size={20} className="text-primary" />
+          </div>
         </div>
       </div>
 
