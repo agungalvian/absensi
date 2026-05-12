@@ -731,9 +731,10 @@ function SettingsComponent() {
   };
 
   const updateOffice = (id, field, value) => {
+    const processedValue = (field === 'lat' || field === 'lng') ? value.replace(',', '.') : value;
     setSettings(prev => ({
       ...prev,
-      offices: prev.offices.map(o => o.id === id ? { ...o, [field]: value } : o)
+      offices: prev.offices.map(o => o.id === id ? { ...o, [field]: processedValue } : o)
     }));
   };
 

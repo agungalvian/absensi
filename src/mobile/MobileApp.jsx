@@ -75,11 +75,19 @@ function MobileLogin({ onLogin }) {
 }
 
 function getDistance(lat1, lon1, lat2, lon2) {
+  // Ensure we are working with numbers and replace commas with dots
+  const nLat1 = typeof lat1 === 'string' ? Number(lat1.replace(',', '.')) : Number(lat1);
+  const nLon1 = typeof lon1 === 'string' ? Number(lon1.replace(',', '.')) : Number(lon1);
+  const nLat2 = typeof lat2 === 'string' ? Number(lat2.replace(',', '.')) : Number(lat2);
+  const nLon2 = typeof lon2 === 'string' ? Number(lon2.replace(',', '.')) : Number(lon2);
+
+  if (isNaN(nLat1) || isNaN(nLon1) || isNaN(nLat2) || isNaN(nLon2)) return Infinity;
+
   const R = 6371e3; // Radius bumi dalam meter
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+  const φ1 = nLat1 * Math.PI / 180;
+  const φ2 = nLat2 * Math.PI / 180;
+  const Δφ = (nLat2 - nLat1) * Math.PI / 180;
+  const Δλ = (nLon2 - nLon1) * Math.PI / 180;
 
   const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
     Math.cos(φ1) * Math.cos(φ2) *
@@ -357,6 +365,15 @@ function LeavesComponent({ user }) {
   useEffect(() => {
     fetchLeaves();
   }, []);
+
+  const updateOffice = (id, field, value) => {
+    // If field is lat or lng, convert comma to dot for numerical safety
+    const processedValue = (field === 'lat' || field === 'lng') ? value.replace(',', '.') : value;
+    setSettings(prev => ({
+      ...prev,
+      offices: prev.offices.map(o => o.id === id ? { ...o, [field]: processedValue } : o)
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
