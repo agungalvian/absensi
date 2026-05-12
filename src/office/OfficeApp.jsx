@@ -526,7 +526,15 @@ function AttendanceReport() {
   const [settings, setSettings] = useState({});
 
   useEffect(() => {
-    fetch('/api/settings').then(res => res.json()).then(setSettings);
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+          setSettings(data);
+        } else {
+          setSettings(prev => ({ ...prev, offices: [] }));
+        }
+      });
   }, []);
 
   const fetchReport = () => {

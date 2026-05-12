@@ -107,13 +107,13 @@ function MobileHome({ user, onChangePassword }) {
     fetch('/api/settings')
       .then(res => res.json())
       .then(data => {
-        const appSettings = Object.keys(data).length > 0 ? data : { lat: -6.2088, lng: 106.8456, radius: 50 };
+        const appSettings = (data && typeof data === 'object' && Object.keys(data).length > 0) ? data : { lat: -6.2088, lng: 106.8456, radius: 50, offices: [] };
         setSettings(appSettings);
         startTracking(appSettings);
       })
       .catch(err => {
         console.error(err);
-        startTracking({ lat: -6.2088, lng: 106.8456, radius: 50 }); // fallback
+        startTracking({ lat: -6.2088, lng: 106.8456, radius: 50, offices: [] }); // fallback
       });
 
     const checkStatus = () => {
@@ -150,10 +150,12 @@ function MobileHome({ user, onChangePassword }) {
           let closestDist = Infinity;
           let closestOffice = null;
 
-          const offices = appSettings.offices || [{ name: 'Kantor Utama', lat: appSettings.lat, lng: appSettings.lng }];
+          const offices = Array.isArray(appSettings.offices) && appSettings.offices.length > 0 
+            ? appSettings.offices 
+            : [{ name: 'Kantor Utama', lat: Number(appSettings.lat), lng: Number(appSettings.lng) }];
 
           offices.forEach(office => {
-            const dist = getDistance(userLat, userLng, office.lat, office.lng);
+            const dist = getDistance(userLat, userLng, Number(office.lat), Number(office.lng));
             if (dist < closestDist) {
               closestDist = dist;
               closestOffice = office;
@@ -164,14 +166,15 @@ function MobileHome({ user, onChangePassword }) {
           setUserPos({ lat: userLat, lng: userLng });
           setTargetOffice(closestOffice);
 
-          if (closestDist <= appSettings.radius) {
+          const radius = Number(appSettings.radius) || 50;
+          if (closestDist <= radius) {
             setIsWithinRadius(true);
             setLocationError(false);
-            setLocationStatus(`Dalam Radius ${closestOffice.name} (Jarak: ${Math.round(closestDist)}m)`);
+            setLocationStatus(`Dalam Radius ${closestOffice.name || 'Kantor'} (Jarak: ${Math.round(closestDist)}m)`);
           } else {
             setIsWithinRadius(false);
             setLocationError(false);
-            setLocationStatus(`Di Luar Radius (Jarak ke ${closestOffice.name}: ${Math.round(closestDist)}m / ${appSettings.radius}m)`);
+            setLocationStatus(`Di Luar Radius (Jarak ke ${closestOffice.name || 'Kantor'}: ${Math.round(closestDist)}m / ${radius}m)`);
           }
         }, (error) => {
           let errorMsg = 'Gagal mendapatkan lokasi. Aktifkan GPS.';
@@ -194,7 +197,7 @@ function MobileHome({ user, onChangePassword }) {
       clearInterval(timer);
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
-  }, [settings.shiftEnd]); // Re-run status check when settings are loaded
+  }, [settings]); // Re-run whenever settings change (e.g. new offices added)
 
   const handleAttend = async () => {
     if (status === 'done_in' || status === 'done_out') return;
