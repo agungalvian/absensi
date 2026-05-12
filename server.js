@@ -218,6 +218,41 @@ app.delete('/api/employees/:nip', async (req, res) => {
   }
 });
 
+// Monthly Attendance Report
+app.get('/api/reports/attendance', async (req, res) => {
+  const { month, year } = req.query;
+  try {
+    const employees = (await pool.query('SELECT nip, name FROM employees ORDER BY name ASC')).rows;
+    const startDate = `${year}-${month.padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+    
+    const logs = (await pool.query(
+      "SELECT nip, timestamp::date as date, MIN(timestamp) as first_in FROM attendance_logs WHERE type='in' AND timestamp::date >= $1 AND timestamp::date <= $2 GROUP BY nip, timestamp::date",
+      [startDate, endDate]
+    )).rows;
+    
+    const leaves = (await pool.query(
+      "SELECT nip, start_date, end_date FROM leave_requests WHERE status='Approved' AND ((start_date >= $1 AND start_date <= $2) OR (end_date >= $1 AND end_date <= $2))",
+      [startDate, endDate]
+    )).rows;
+    
+    const holidays = (await pool.query(
+      "SELECT holiday_date FROM holidays WHERE holiday_date >= $1 AND holiday_date <= $2",
+      [startDate, endDate]
+    )).rows.map(h => h.holiday_date.toISOString().split('T')[0]);
+
+    res.json({
+      employees,
+      logs,
+      leaves,
+      holidays
+    });
+  } catch (err) {
+    console.error('Report API Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 async function calculateLeaveDays(startDate, endDate, pool) {
   const result = await pool.query('SELECT holiday_date FROM holidays WHERE holiday_date >= $1 AND holiday_date <= $2', [startDate, endDate]);
   const holidays = result.rows.map(r => {

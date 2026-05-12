@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import { Users, LayoutDashboard, Settings, Calendar, Clock, Download, Upload, LogOut, Lock } from 'lucide-react';
+import { 
+  Users, 
+  LayoutDashboard, 
+  Settings as SettingsIcon, 
+  Calendar as CalendarIcon, 
+  Clock, 
+  LogOut, 
+  Lock, 
+  BarChart3, 
+  Download, 
+  Upload, 
+  Plus, 
+  Trash, 
+  Search, 
+  Filter 
+} from 'lucide-react';
 
 function Sidebar({ onLogout, onChangePassword }) {
   const navigate = useNavigate();
@@ -9,8 +24,6 @@ function Sidebar({ onLogout, onChangePassword }) {
   const links = [
     { path: '/office', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { path: '/office/employees', icon: <Users size={20} />, label: 'Data Pegawai' },
-    { path: '/office/leaves', icon: <Clock size={20} />, label: 'Persetujuan Cuti/Izin' },
-    { path: '/office/settings', icon: <Settings size={20} />, label: 'Parameter & Geofence' },
   ];
 
   return (
@@ -32,6 +45,27 @@ function Sidebar({ onLogout, onChangePassword }) {
             <span>{link.label}</span>
           </button>
         ))}
+        <button
+          className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === '/office/leaves' ? 'active' : ''}`}
+          onClick={() => navigate('/office/leaves')}
+        >
+          <CalendarIcon size={20} />
+          <span>Persetujuan Cuti/Izin</span>
+        </button>
+        <button
+          className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === '/office/reports' ? 'active' : ''}`}
+          onClick={() => navigate('/office/reports')}
+        >
+          <BarChart3 size={20} />
+          <span>Laporan Presensi</span>
+        </button>
+        <button
+          className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === '/office/settings' ? 'active' : ''}`}
+          onClick={() => navigate('/office/settings')}
+        >
+          <SettingsIcon size={20} />
+          <span>Parameter & Geofence</span>
+        </button>
       </div>
       <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-border/50">
         <button className="sidebar-link w-full text-left bg-transparent border-none cursor-pointer" onClick={onChangePassword}>
@@ -485,6 +519,128 @@ function LeaveApproval() {
   );
 }
 
+function AttendanceReport() {
+  const [data, setData] = useState({ employees: [], logs: [], leaves: [], holidays: [] });
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [settings, setSettings] = useState({});
+
+  useEffect(() => {
+    fetch('/api/settings').then(res => res.json()).then(setSettings);
+  }, []);
+
+  const fetchReport = () => {
+    fetch(`/api/reports/attendance?month=${month}&year=${year}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.employees) setData(data);
+        else setData({ employees: [], logs: [], leaves: [], holidays: [] });
+      });
+  };
+
+  useEffect(() => {
+    fetchReport();
+  }, [month, year]);
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const getStatus = (nip, day) => {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateObj = new Date(dateStr);
+    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+    const isHoliday = data.holidays.includes(dateStr);
+
+    // 1. Check Leave
+    const isOnLeave = data.leaves.some(l => {
+      const start = new Date(l.start_date).toISOString().split('T')[0];
+      const end = new Date(l.end_date).toISOString().split('T')[0];
+      return l.nip === nip && dateStr >= start && dateStr <= end;
+    });
+    if (isOnLeave) return 'leave';
+
+    // 2. Check Log
+    const log = data.logs.find(l => {
+      const logDate = new Date(l.date).toISOString().split('T')[0];
+      return l.nip === nip && logDate === dateStr;
+    });
+
+    if (log) {
+      const checkInTime = new Date(log.first_in).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      const shiftStart = settings.shiftStart || '08:00';
+      return checkInTime > shiftStart ? 'late' : 'normal';
+    }
+
+    // 3. Check if absent (exclude future dates, weekends, and holidays)
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr > today || isWeekend || isHoliday) return 'none';
+
+    return 'absent';
+  };
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-primary">Laporan Presensi Bulanan</h2>
+        <div className="flex gap-4">
+          <select className="form-control w-32" value={month} onChange={e => setMonth(e.target.value)}>
+            {Array.from({ length: 12 }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{new Date(0, i).toLocaleString('id-ID', { month: 'long' })}</option>
+            ))}
+          </select>
+          <select className="form-control w-32" value={year} onChange={e => setYear(e.target.value)}>
+            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+          <button className="btn btn-primary" onClick={fetchReport}>Refresh</button>
+        </div>
+      </div>
+
+      <div className="card overflow-x-auto p-0">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr className="bg-surface-hover">
+              <th className="p-3 border border-border sticky left-0 bg-surface z-10 text-left min-w-[150px]">Nama Pegawai</th>
+              {days.map(d => (
+                <th key={d} className="p-1 border border-border text-center min-w-[32px]">{d}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.employees.map(emp => (
+              <tr key={emp.nip} className="hover:bg-surface-hover transition-colors">
+                <td className="p-3 border border-border font-medium sticky left-0 bg-surface z-10">{emp.name}</td>
+                {days.map(d => {
+                  const status = getStatus(emp.nip, d);
+                  let color = '';
+                  let title = '';
+                  if (status === 'normal') { color = 'bg-green-500'; title = 'Masuk Normal'; }
+                  else if (status === 'late') { color = 'bg-orange-500'; title = 'Terlambat'; }
+                  else if (status === 'absent') { color = 'bg-red-500'; title = 'Tanpa Keterangan'; }
+                  else if (status === 'leave') { color = 'bg-blue-500'; title = 'Izin/Cuti'; }
+                  
+                  return (
+                    <td key={d} className="p-0 border border-border">
+                      <div className={`w-full h-10 ${color}`} title={title}></div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-6 text-[11px] text-muted font-bold uppercase tracking-wider">
+        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-sm"></div> Masuk Normal</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-sm"></div> Terlambat</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-sm"></div> Alpa / Tidak Absen</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-500 rounded-sm"></div> Izin / Cuti</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-transparent border border-border rounded-sm"></div> Libur / Belum Terjadi</div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsComponent() {
   const [settings, setSettings] = useState({
     offices: [{ id: 1, name: 'Kantor Pusat', address: 'Jakarta', lat: -6.2088, lng: 106.8456 }],
@@ -762,6 +918,7 @@ export default function OfficeApp() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/employees" element={<EmployeeManagement />} />
           <Route path="/leaves" element={<LeaveApproval />} />
+          <Route path="/reports" element={<AttendanceReport />} />
           <Route path="/settings" element={<SettingsComponent />} />
           <Route path="*" element={<div className="p-6">Fitur dalam pengembangan...</div>} />
         </Routes>
