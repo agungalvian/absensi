@@ -99,6 +99,7 @@ function MobileHome({ user, onChangePassword }) {
   const [settings, setSettings] = useState({ lat: -6.2088, lng: 106.8456, radius: 50 });
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
   const [targetOffice, setTargetOffice] = useState(null);
+  const [currentAddress, setCurrentAddress] = useState('Mencari alamat...');
   const [todayLogs, setTodayLogs] = useState([]);
   const navigate = useNavigate();
 
@@ -146,6 +147,17 @@ function MobileHome({ user, onChangePassword }) {
         watchId = navigator.geolocation.watchPosition((position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
+          setUserPos({ lat: userLat, lng: userLng });
+
+          // Reverse Geocoding
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&zoom=18&addressdetails=1`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.display_name) {
+                const addr = data.display_name.split(',').slice(0, 3).join(',');
+                setCurrentAddress(addr);
+              }
+            }).catch(() => {});
 
           let closestDist = Infinity;
           let closestOffice = null;
@@ -186,7 +198,7 @@ function MobileHome({ user, onChangePassword }) {
           }
           setLocationStatus(errorMsg);
           setIsWithinRadius(false);
-        }, { enableHighAccuracy: true });
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
       } else {
         setLocationStatus('Geolocation tidak didukung browser ini.');
         setLocationError(true);
@@ -260,11 +272,16 @@ function MobileHome({ user, onChangePassword }) {
             {isWithinRadius ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
             <span className="font-bold">{locationStatus}</span>
           </div>
-          {targetOffice && (
-            <p className="text-[10px] opacity-70 max-w-[200px] leading-tight">
-              {targetOffice.address}
-            </p>
-          )}
+          
+          <div className="mt-2 bg-background/50 backdrop-blur-sm rounded-lg p-3 border border-border/50 max-w-[280px]">
+            <div className="flex items-start gap-2 text-left">
+              <MapPin size={14} className="text-primary mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[9px] text-muted uppercase font-bold tracking-wider">Lokasi Anda Saat Ini</p>
+                <p className="text-[11px] font-medium leading-tight line-clamp-2">{currentAddress}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {locationError && (
