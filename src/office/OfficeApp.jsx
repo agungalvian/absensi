@@ -13,71 +13,77 @@ import {
   Upload, 
   Plus, 
   Trash, 
-  Search, 
-  Filter 
+  Filter,
+  Menu,
+  X,
+  TrendingUp,
+  MapPin,
+  CheckCircle,
+  AlertTriangle,
+  User
 } from 'lucide-react';
 
-function Sidebar({ onLogout, onChangePassword }) {
+function Sidebar({ onLogout, onChangePassword, isOpen, setIsOpen }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const links = [
     { path: '/office', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
     { path: '/office/employees', icon: <Users size={20} />, label: 'Data Pegawai' },
+    { path: '/office/leaves', icon: <CalendarIcon size={20} />, label: 'Persetujuan Cuti' },
+    { path: '/office/reports', icon: <BarChart3 size={20} />, label: 'Laporan Absensi' },
+    { path: '/office/settings', icon: <SettingsIcon size={20} />, label: 'Pengaturan & Geofence' },
   ];
 
   return (
-    <div className="sidebar p-6 flex flex-col h-full">
-      <div className="flex flex-col items-center text-center mb-10">
-        <div className="mb-4" style={{ width: '80px', height: '80px' }}>
-          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+    <>
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden" 
+          onClick={() => setIsOpen(false)}
+        ></div>
+      )}
+      <div className={`sidebar p-6 h-full transition-all duration-300 ${isOpen ? 'open' : ''} relative`}>
+        <button 
+          className="sidebar-close-btn"
+          onClick={() => setIsOpen(false)}
+        >
+          <X size={24} />
+        </button>
+        <div className="flex justify-center mb-10 mt-2">
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl p-3 shadow-xl border border-white/5">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+          </div>
         </div>
-        <h1 className="font-bold text-xl text-primary tracking-tight">BackOffice</h1>
-      </div>
-      <div className="flex-1 flex flex-col gap-2">
-        {links.map((link) => (
-          <button
-            key={link.path}
-            className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === link.path ? 'active' : ''}`}
-            onClick={() => navigate(link.path)}
-          >
-            {link.icon}
-            <span>{link.label}</span>
+        
+        <div className="flex-1 flex flex-col gap-1">
+          {links.map((link) => (
+            <button
+              key={link.path}
+              className={`sidebar-link ${location.pathname === link.path ? 'active' : ''}`}
+              onClick={() => {
+                navigate(link.path);
+                setIsOpen(false);
+              }}
+            >
+              {link.icon}
+              <span>{link.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-auto pt-6 border-t border-white/10 flex flex-col gap-1">
+          <button className="sidebar-link" onClick={onChangePassword}>
+            <Lock size={18} />
+            <span>Ganti Password</span>
           </button>
-        ))}
-        <button
-          className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === '/office/leaves' ? 'active' : ''}`}
-          onClick={() => navigate('/office/leaves')}
-        >
-          <CalendarIcon size={20} />
-          <span>Persetujuan Cuti/Izin</span>
-        </button>
-        <button
-          className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === '/office/reports' ? 'active' : ''}`}
-          onClick={() => navigate('/office/reports')}
-        >
-          <BarChart3 size={20} />
-          <span>Laporan Presensi</span>
-        </button>
-        <button
-          className={`sidebar-link w-full text-left bg-transparent border-none cursor-pointer ${location.pathname === '/office/settings' ? 'active' : ''}`}
-          onClick={() => navigate('/office/settings')}
-        >
-          <SettingsIcon size={20} />
-          <span>Parameter & Geofence</span>
-        </button>
+          <button className="sidebar-link text-red-400 hover:text-red-300" onClick={onLogout}>
+            <LogOut size={18} />
+            <span>Keluar</span>
+          </button>
+        </div>
       </div>
-      <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-border/50">
-        <button className="sidebar-link w-full text-left bg-transparent border-none cursor-pointer" onClick={onChangePassword}>
-          <Lock size={20} />
-          <span>Ganti Password</span>
-        </button>
-        <button className="sidebar-link w-full text-left bg-transparent border-none cursor-pointer" onClick={onLogout}>
-          <LogOut size={20} />
-          <span>Keluar</span>
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -161,23 +167,56 @@ function Dashboard() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Real-time Dashboard</h2>
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <div className="card text-center flex flex-col items-center">
-          <h3 className="text-muted mb-2">Total Pegawai</h3>
-          <p className="text-3xl font-bold">{stats.totalEmployees}</p>
+      <div className="glass-header">
+        <div>
+          <h2 className="text-2xl font-bold text-main">Real-time Dashboard</h2>
+          <p className="text-xs text-muted">Selamat datang di panel kendali presensi GCK</p>
         </div>
-        <div className="card text-center flex flex-col items-center">
-          <h3 className="text-muted mb-2">Hadir Hari Ini</h3>
-          <p className="text-3xl font-bold text-secondary">{stats.presentToday}</p>
+        <div className="text-right hidden sm:block">
+          <p className="text-sm font-bold text-main">{new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p className="text-xs text-muted">Status Sistem: <span className="text-green-500 font-bold">Online</span></p>
         </div>
-        <div className="card text-center flex flex-col items-center">
-          <h3 className="text-muted mb-2">Sedang Cuti/Izin</h3>
-          <p className="text-3xl font-bold text-primary">{stats?.onLeave || 0}</p>
+      </div>
+
+      <div className="dashboard-stats-grid">
+        <div className="stats-card">
+          <div className="stats-icon-box bg-indigo">
+            <Users size={20} />
+          </div>
+          <div className="stats-content">
+            <span className="stats-label">Total Pegawai</span>
+            <span className="stats-value">{stats.totalEmployees}</span>
+          </div>
         </div>
-        <div className="card text-center flex flex-col items-center">
-          <h3 className="text-muted mb-2">Tanpa Keterangan</h3>
-          <p className="text-3xl font-bold text-danger">{Math.max(0, (stats?.totalEmployees || 0) - (stats?.presentToday || 0) - (stats?.onLeave || 0))}</p>
+        
+        <div className="stats-card">
+          <div className="stats-icon-box bg-orange">
+            <CheckCircle size={20} />
+          </div>
+          <div className="stats-content">
+            <span className="stats-label">Hadir Hari Ini</span>
+            <span className="stats-value">{stats.presentToday}</span>
+          </div>
+        </div>
+
+        <div className="stats-card">
+          <div className="stats-icon-box bg-green">
+            <CalendarIcon size={20} />
+          </div>
+          <div className="stats-content">
+            <span className="stats-label">Sedang Cuti/Izin</span>
+            <span className="stats-value">{stats?.onLeave || 0}</span>
+          </div>
+        </div>
+
+        <div className="stats-card">
+          <div className="stats-icon-box bg-yellow">
+            <AlertTriangle size={20} />
+          </div>
+          <div className="stats-content">
+            <span className="stats-label">Tanpa Keterangan</span>
+            <span className="stats-value">{Math.max(0, (stats?.totalEmployees || 0) - (stats?.presentToday || 0) - (stats?.onLeave || 0))}</span>
+          </div>
         </div>
       </div>
       
@@ -605,6 +644,15 @@ function AttendanceReport() {
         </div>
       </div>
 
+      {/* Legend at the top */}
+      <div className="mb-8 flex flex-wrap gap-8 text-[11px] text-slate-500 font-bold uppercase tracking-wider p-4 bg-white rounded-lg border border-border shadow-sm">
+        <div className="flex items-center gap-2"><CheckCircle size={16} className="text-green-500" /> <span className="mt-0.5">Masuk Normal</span></div>
+        <div className="flex items-center gap-2"><Clock size={16} className="text-orange-500" /> <span className="mt-0.5">Terlambat</span></div>
+        <div className="flex items-center gap-2"><AlertTriangle size={16} className="text-yellow-500" /> <span className="mt-0.5">Hanya Masuk/Pulang</span></div>
+        <div className="flex items-center gap-2"><X size={16} className="text-red-500" /> <span className="mt-0.5">Alpa / Tidak Absen</span></div>
+        <div className="flex items-center gap-2"><CalendarIcon size={16} className="text-blue-500" /> <span className="mt-0.5">Izin / Cuti</span></div>
+      </div>
+
       <div className="card overflow-x-auto p-0">
         <table className="w-full text-xs border-collapse">
           <thead>
@@ -621,18 +669,19 @@ function AttendanceReport() {
                 <td className="p-3 border border-border font-medium sticky left-0 bg-surface z-10">{emp.name}</td>
                 {days.map(d => {
                   const status = getStatus(emp.nip, d);
-                  let color = '';
+                  let icon = null;
                   let title = '';
-                  if (status === 'normal') { color = 'bg-green-500'; title = 'Masuk Normal'; }
-                  else if (status === 'late') { color = 'bg-orange-500'; title = 'Terlambat'; }
-                  else if (status === 'partial') { color = 'bg-yellow-400'; title = 'Absen Tidak Lengkap (Hanya Masuk/Pulang)'; }
-                  else if (status === 'absent') { color = 'bg-red-500'; title = 'Tanpa Keterangan'; }
-                  else if (status === 'leave') { color = 'bg-blue-500'; title = 'Izin/Cuti'; }
+
+                  if (status === 'normal') { icon = <CheckCircle size={16} className="text-green-500" />; title = 'Masuk Normal'; }
+                  else if (status === 'late') { icon = <Clock size={16} className="text-orange-500" />; title = 'Terlambat'; }
+                  else if (status === 'partial') { icon = <AlertTriangle size={16} className="text-yellow-500" />; title = 'Absen Tidak Lengkap (Hanya Masuk/Pulang)'; }
+                  else if (status === 'absent') { icon = <X size={16} className="text-red-500" />; title = 'Tanpa Keterangan'; }
+                  else if (status === 'leave') { icon = <CalendarIcon size={16} className="text-blue-500" />; title = 'Izin/Cuti'; }
                   
                   return (
                     <td key={d} className="p-0 border border-border text-center">
-                      <div className={`w-full h-10 ${color} flex items-center justify-center text-[8px]`} title={title}>
-                        {status !== 'none' ? status : ''}
+                      <div className="w-full h-10 flex items-center justify-center bg-transparent" title={title}>
+                        {icon}
                       </div>
                     </td>
                   );
@@ -641,15 +690,6 @@ function AttendanceReport() {
             ))}
           </tbody>
         </table>
-      </div>
-
-      <div className="mt-6 flex flex-wrap gap-6 text-[11px] text-muted font-bold uppercase tracking-wider">
-        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-sm"></div> Masuk Normal</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-sm"></div> Terlambat</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-yellow-400 rounded-sm"></div> Hanya Masuk/Pulang</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-sm"></div> Alpa / Tidak Absen</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-500 rounded-sm"></div> Izin / Cuti</div>
-        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-transparent border border-border rounded-sm"></div> Libur / Belum Terjadi</div>
       </div>
     </div>
   );
@@ -896,30 +936,72 @@ export default function OfficeApp() {
     navigate('/office');
   };
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-surface-hover w-full p-6">
-        <div className="w-full max-w-xs card shadow-2xl p-8 pt-10">
-          <div className="flex justify-center w-full mb-6">
-            <div style={{ width: '80px', height: '80px' }}>
+      <div className="login-split-wrapper">
+        {/* Left Panel - Branding & Welcome */}
+        <div className="login-left-panel">
+          <div className="shape" style={{ top: '20%', left: '10%' }}></div>
+          <div className="shape" style={{ bottom: '15%', left: '20%', height: '120px' }}></div>
+          <div className="shape" style={{ top: '40%', left: '30%', height: '180px', opacity: 0.3 }}></div>
+          
+          <div className="z-10">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl p-3 mb-8">
               <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
+            <h1 className="text-5xl font-bold mb-6 leading-tight">Welcome to <br/>BackOffice</h1>
+            <p className="text-lg opacity-90 max-w-md leading-relaxed">
+              Sistem manajemen presensi terintegrasi GCK. Kelola data pegawai, persetujuan cuti, dan laporan kehadiran dalam satu panel kendali yang modern.
+            </p>
           </div>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-primary">BackOffice Login</h2>
-            <p className="text-sm text-muted mt-2">Masuk menggunakan akun admin</p>
+        </div>
+
+        {/* Right Panel - Login Form */}
+        <div className="login-right-panel">
+          <div className="login-form-container">
+            <div className="text-center mb-10">
+              <h2 className="text-xl font-bold text-slate-400 tracking-[4px] uppercase mb-2">User Login</h2>
+              <div className="h-1 w-12 bg-primary mx-auto rounded-full"></div>
+            </div>
+
+            <form onSubmit={handleLogin} className="flex flex-col gap-2">
+              <div className="login-input-group">
+                <User className="icon" size={18} />
+                <input 
+                  type="text" 
+                  value={username} 
+                  onChange={e => setUsername(e.target.value)} 
+                  placeholder="Username / NIP" 
+                  required 
+                />
+              </div>
+
+              <div className="login-input-group">
+                <Lock className="icon" size={18} />
+                <input 
+                  type="password" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  placeholder="Password" 
+                  required 
+                />
+              </div>
+
+              <div className="flex justify-between items-center px-2 mb-6">
+                <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
+                  <input type="checkbox" className="rounded border-slate-300" />
+                  <span>Remember</span>
+                </label>
+                <a href="#" className="text-xs text-slate-400 hover:text-primary transition-colors">Forgot password?</a>
+              </div>
+
+              <button type="submit" className="login-btn-gradient w-32 mx-auto">
+                LOGIN
+              </button>
+            </form>
           </div>
-          <form onSubmit={handleLogin} className="text-center">
-            <div className="form-group">
-              <label className="form-label text-center">Username / NIP</label>
-              <input type="text" className="form-control text-center" value={username} onChange={e => setUsername(e.target.value)} placeholder="Masukkan username..." required />
-            </div>
-            <div className="form-group">
-              <label className="form-label text-center">Password</label>
-              <input type="password" className="form-control text-center" value={password} onChange={e => setPassword(e.target.value)} placeholder="Masukkan password..." required />
-            </div>
-            <button type="submit" className="btn btn-primary w-full mt-4">Masuk</button>
-          </form>
         </div>
       </div>
     );
@@ -927,8 +1009,19 @@ export default function OfficeApp() {
 
   return (
     <div className="desktop-view w-full">
-      <Sidebar onLogout={handleLogout} onChangePassword={() => setShowChangePassword(true)} />
+      <Sidebar 
+        onLogout={handleLogout} 
+        onChangePassword={() => setShowChangePassword(true)} 
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+      />
       <div className="main-content">
+        <div className="lg:hidden mb-6 flex justify-end">
+          <button className="mobile-nav-toggle flex items-center justify-center bg-white p-3 rounded-xl shadow-sm border border-border" onClick={() => setIsSidebarOpen(true)}>
+            <Menu size={24} className="text-main" />
+          </button>
+        </div>
+
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/employees" element={<EmployeeManagement />} />

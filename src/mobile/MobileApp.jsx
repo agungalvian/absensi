@@ -34,8 +34,8 @@ function MobileLogin({ onLogin }) {
   return (
     <div className="mobile-view flex flex-col justify-center items-center p-6 bg-surface-hover">
       <div className="w-full max-w-sm card shadow-2xl p-8 pt-10">
-        <div className="flex justify-center w-full mb-6">
-          <div style={{ width: '80px', height: '80px' }}>
+        <div className="flex justify-center w-full mb-4">
+          <div style={{ width: '48px', height: '48px' }}>
             <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
         </div>
