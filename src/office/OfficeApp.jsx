@@ -561,19 +561,21 @@ function AttendanceReport() {
 
     // 1. Check Leave
     const isOnLeave = data.leaves.some(l => {
-      const start = new Date(l.start_date).toISOString().split('T')[0];
-      const end = new Date(l.end_date).toISOString().split('T')[0];
+      const start = new Date(l.start_date).toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const end = new Date(l.end_date).toLocaleDateString('en-CA');
       return l.nip === nip && dateStr >= start && dateStr <= end;
     });
     if (isOnLeave) return 'leave';
 
     // 2. Check Log
     const log = data.logs.find(l => {
-      const logDate = new Date(l.date).toISOString().split('T')[0];
-      return l.nip === nip && logDate === dateStr;
+      // l.date is now a string 'YYYY-MM-DD' from the API
+      return l.nip === nip && l.date === dateStr;
     });
 
     if (log) {
+      if (!log.first_in || !log.first_out) return 'partial';
+      
       const checkInTime = new Date(log.first_in).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
       const shiftStart = settings.shiftStart || '08:00';
       return checkInTime > shiftStart ? 'late' : 'normal';
@@ -623,12 +625,15 @@ function AttendanceReport() {
                   let title = '';
                   if (status === 'normal') { color = 'bg-green-500'; title = 'Masuk Normal'; }
                   else if (status === 'late') { color = 'bg-orange-500'; title = 'Terlambat'; }
+                  else if (status === 'partial') { color = 'bg-yellow-400'; title = 'Absen Tidak Lengkap (Hanya Masuk/Pulang)'; }
                   else if (status === 'absent') { color = 'bg-red-500'; title = 'Tanpa Keterangan'; }
                   else if (status === 'leave') { color = 'bg-blue-500'; title = 'Izin/Cuti'; }
                   
                   return (
-                    <td key={d} className="p-0 border border-border">
-                      <div className={`w-full h-10 ${color}`} title={title}></div>
+                    <td key={d} className="p-0 border border-border text-center">
+                      <div className={`w-full h-10 ${color} flex items-center justify-center text-[8px]`} title={title}>
+                        {status !== 'none' ? status : ''}
+                      </div>
                     </td>
                   );
                 })}
@@ -641,6 +646,7 @@ function AttendanceReport() {
       <div className="mt-6 flex flex-wrap gap-6 text-[11px] text-muted font-bold uppercase tracking-wider">
         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-sm"></div> Masuk Normal</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-sm"></div> Terlambat</div>
+        <div className="flex items-center gap-2"><div className="w-4 h-4 bg-yellow-400 rounded-sm"></div> Hanya Masuk/Pulang</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-sm"></div> Alpa / Tidak Absen</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-500 rounded-sm"></div> Izin / Cuti</div>
         <div className="flex items-center gap-2"><div className="w-4 h-4 bg-transparent border border-border rounded-sm"></div> Libur / Belum Terjadi</div>

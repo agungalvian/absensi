@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { MapPin, Clock, Calendar, User, LogOut, CheckCircle, AlertTriangle, List, Lock, RefreshCw } from 'lucide-react';
+import { MapPin, Clock, Calendar, User, LogOut, CheckCircle, AlertTriangle, List, Lock, RefreshCw, Download } from 'lucide-react';
+import usePWAInstall from '../usePWAInstall';
 
 function MobileLogin({ onLogin }) {
   const [nip, setNip] = useState('');
@@ -107,6 +108,7 @@ function MobileHome({ user, onChangePassword }) {
   const [settings, setSettings] = useState({ lat: -6.2088, lng: 106.8456, radius: 50 });
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0, accuracy: 0 });
   const [targetOffice, setTargetOffice] = useState(null);
+  const { isInstallable, installApp } = usePWAInstall();
   const [currentAddress, setCurrentAddress] = useState('Mencari alamat...');
   const [todayLogs, setTodayLogs] = useState([]);
   const [lastSync, setLastSync] = useState(new Date());
@@ -280,6 +282,15 @@ function MobileHome({ user, onChangePassword }) {
           <p className="text-xs opacity-70">Terakhir update: {lastSync.toLocaleTimeString('id-ID')}</p>
         </div>
         <div className="flex gap-2">
+          {isInstallable && (
+            <div 
+              className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center cursor-pointer border border-primary/20 animate-bounce"
+              onClick={installApp}
+              title="Instal Aplikasi"
+            >
+              <Download size={18} className="text-primary" />
+            </div>
+          )}
           <div 
             className="w-10 h-10 rounded-full bg-surface-hover flex items-center justify-center cursor-pointer border border-border/30"
             onClick={fetchSettings}

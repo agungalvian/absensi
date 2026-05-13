@@ -409,3 +409,12 @@ th {
 .animate-slide-down {
   animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Attendance Status Utilities */
+.bg-green-500 { background-color: #22c55e !important; }
+.bg-orange-500 { background-color: #f97316 !important; }
+.bg-red-500 { background-color: #ef4444 !important; }
+.bg-blue-500 { background-color: #3b82f6 !important; }
+.bg-yellow-400 { background-color: #facc15 !important; }
+.bg-transparent { background-color: transparent !important; }
+.border-border { border-color: var(--border) !important; }

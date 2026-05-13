@@ -227,7 +227,14 @@ app.get('/api/reports/attendance', async (req, res) => {
     const endDate = new Date(year, month, 0).toISOString().split('T')[0];
     
     const logs = (await pool.query(
-      "SELECT nip, timestamp::date as date, MIN(timestamp) as first_in FROM attendance_logs WHERE type='in' AND timestamp::date >= $1 AND timestamp::date <= $2 GROUP BY nip, timestamp::date",
+      `SELECT 
+        nip, 
+        TO_CHAR(timestamp, 'YYYY-MM-DD') as date, 
+        MIN(CASE WHEN type='in' THEN timestamp END) as first_in,
+        MIN(CASE WHEN type='out' THEN timestamp END) as first_out
+      FROM attendance_logs 
+      WHERE timestamp::date >= $1 AND timestamp::date <= $2 
+      GROUP BY nip, TO_CHAR(timestamp, 'YYYY-MM-DD')`,
       [startDate, endDate]
     )).rows;
     
@@ -237,9 +244,9 @@ app.get('/api/reports/attendance', async (req, res) => {
     )).rows;
     
     const holidays = (await pool.query(
-      "SELECT holiday_date FROM holidays WHERE holiday_date >= $1 AND holiday_date <= $2",
+      "SELECT TO_CHAR(holiday_date, 'YYYY-MM-DD') as holiday_date FROM holidays WHERE holiday_date >= $1 AND holiday_date <= $2",
       [startDate, endDate]
-    )).rows.map(h => h.holiday_date.toISOString().split('T')[0]);
+    )).rows.map(h => h.holiday_date);
 
     res.json({
       employees,
