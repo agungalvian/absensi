@@ -514,9 +514,14 @@ function LeavesComponent({ user }) {
 
 function HistoryComponent({ user }) {
   const [logs, setLogs] = useState([]);
-  const [filterYear, setFilterYear] = useState(new Date().getFullYear());
-  const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
-  const [filterDate, setFilterDate] = useState('');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('en-CA');
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toLocaleDateString('en-CA');
+  });
 
   const fetchHistory = () => {
     fetch(`/api/attendance/me/${user.nip}`)
@@ -532,11 +537,8 @@ function HistoryComponent({ user }) {
   }, []);
 
   const filteredLogs = logs.filter(log => {
-    const d = new Date(log.timestamp);
-    const yearMatch = d.getFullYear() === parseInt(filterYear);
-    const monthMatch = (d.getMonth() + 1) === parseInt(filterMonth);
-    const dateMatch = filterDate ? d.toLocaleDateString('en-CA') === filterDate : true;
-    return yearMatch && monthMatch && dateMatch;
+    const logDate = new Date(log.timestamp).toLocaleDateString('en-CA');
+    return logDate >= startDate && logDate <= endDate;
   });
 
   const months = [
@@ -559,31 +561,18 @@ function HistoryComponent({ user }) {
 
       <div className="card mb-6 border-primary/20">
         <h3 className="font-bold mb-4 text-sm flex items-center gap-2">
-          <List size={16} className="text-primary" />
-          Filter Riwayat
+          <Calendar size={16} className="text-primary" />
+          Filter Rentang Tanggal
         </h3>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="form-group mb-0">
-            <label className="form-label text-[10px] uppercase tracking-wider">Tahun</label>
-            <select className="form-control" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
+            <label className="form-label text-[10px] uppercase tracking-wider">Mulai</label>
+            <input type="date" className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
           <div className="form-group mb-0">
-            <label className="form-label text-[10px] uppercase tracking-wider">Bulan</label>
-            <select className="form-control" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-              {months.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-            </select>
+            <label className="form-label text-[10px] uppercase tracking-wider">Sampai</label>
+            <input type="date" className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
-        </div>
-        <div className="form-group mb-0">
-          <label className="form-label text-[10px] uppercase tracking-wider">Tanggal Spesifik</label>
-          <input type="date" className="form-control" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
-          {filterDate && (
-            <button className="text-[10px] text-danger mt-1 underline" onClick={() => setFilterDate('')}>
-              Hapus Filter Tanggal
-            </button>
-          )}
         </div>
       </div>
 
@@ -621,7 +610,7 @@ function HistoryComponent({ user }) {
           <div className="text-center py-20 text-muted glass-panel border-dashed">
             <List size={40} className="mx-auto mb-3 opacity-20" />
             <p className="text-sm">Tidak ada data absensi ditemukan</p>
-            <p className="text-[10px] mt-1">Coba ubah filter tahun atau bulan</p>
+            <p className="text-[10px] mt-1">Coba ubah rentang tanggal filter</p>
           </div>
         )}
       </div>
