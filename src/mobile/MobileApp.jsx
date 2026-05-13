@@ -98,7 +98,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c; // dalam meter
 }
 
-function MobileHome({ user, onChangePassword }) {
+function MobileHome({ user, onChangePassword, isInstallable, installApp }) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [status, setStatus] = useState(null); // 'in', 'out'
   const [locationStatus, setLocationStatus] = useState('Mencari lokasi...');
@@ -108,7 +108,6 @@ function MobileHome({ user, onChangePassword }) {
   const [settings, setSettings] = useState({ lat: -6.2088, lng: 106.8456, radius: 50 });
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0, accuracy: 0 });
   const [targetOffice, setTargetOffice] = useState(null);
-  const { isInstallable, installApp } = usePWAInstall();
   const [currentAddress, setCurrentAddress] = useState('Mencari alamat...');
   const [todayLogs, setTodayLogs] = useState([]);
   const [lastSync, setLastSync] = useState(new Date());
@@ -684,6 +683,7 @@ export default function MobileApp() {
     return saved ? JSON.parse(saved) : null;
   });
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const { isInstallable, installApp } = usePWAInstall();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -725,7 +725,7 @@ export default function MobileApp() {
       <div className="flex-1 overflow-y-auto">
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<MobileHome user={user} onChangePassword={() => setShowChangePassword(true)} />} />
+          <Route path="/home" element={<MobileHome user={user} onChangePassword={() => setShowChangePassword(true)} isInstallable={isInstallable} installApp={installApp} />} />
           <Route path="/leaves" element={<LeavesComponent user={user} />} />
           <Route path="/history" element={<HistoryComponent user={user} />} />
         </Routes>
