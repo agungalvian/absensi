@@ -373,6 +373,34 @@ app.put('/api/leaves/:id/approve', async (req, res) => {
 });
 
 // Attendance API
+// Geocoding Proxy with simple cache
+const geoCache = new Map();
+app.get('/api/geodecode', async (req, res) => {
+  const { lat, lng } = req.query;
+  if (!lat || !lng) return res.status(400).json({ error: 'Missing lat/lng' });
+  
+  const cacheKey = `${parseFloat(lat).toFixed(4)},${parseFloat(lng).toFixed(4)}`;
+  if (geoCache.has(cacheKey)) {
+    return res.json(geoCache.get(cacheKey));
+  }
+
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
+      headers: { 'User-Agent': 'AbsensiPwaApp/1.0' }
+    });
+    const data = await response.json();
+    geoCache.set(cacheKey, data);
+    
+    // Clear cache if it gets too big
+    if (geoCache.size > 1000) geoCache.clear();
+    
+    res.json(data);
+  } catch (err) {
+    console.error('Geo Proxy Error:', err);
+    res.status(500).json({ error: 'Failed to fetch address' });
+  }
+});
+
 app.post('/api/attendance', async (req, res) => {
   const { nip, type, location_lat, location_lng, office_name, distance_meters } = req.body;
   try {

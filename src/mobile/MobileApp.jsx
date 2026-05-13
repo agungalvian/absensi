@@ -105,7 +105,7 @@ function MobileHome({ user, onChangePassword }) {
   const [locationError, setLocationError] = useState(false);
   const [distance, setDistance] = useState(null);
   const [settings, setSettings] = useState({ lat: -6.2088, lng: 106.8456, radius: 50 });
-  const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
+  const [userPos, setUserPos] = useState({ lat: 0, lng: 0, accuracy: 0 });
   const [targetOffice, setTargetOffice] = useState(null);
   const [currentAddress, setCurrentAddress] = useState('Mencari alamat...');
   const [todayLogs, setTodayLogs] = useState([]);
@@ -125,8 +125,11 @@ function MobileHome({ user, onChangePassword }) {
 
   useEffect(() => {
     fetchSettings();
-    const syncInterval = setInterval(fetchSettings, 30000);
-    
+    const syncInterval = setInterval(fetchSettings, 60000); // Sync settings every 1 minute
+    return () => clearInterval(syncInterval);
+  }, []);
+
+  useEffect(() => {
     const checkStatus = () => {
       fetch(`/api/attendance/me/${user.nip}`)
         .then(res => res.json())
@@ -149,7 +152,11 @@ function MobileHome({ user, onChangePassword }) {
     };
 
     if (settings.shiftEnd) checkStatus();
+    const statusInterval = setInterval(checkStatus, 30000); // Check status every 30s
+    return () => clearInterval(statusInterval);
+  }, [settings.shiftEnd, user.nip]);
 
+  useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     let watchId;
 
@@ -158,16 +165,27 @@ function MobileHome({ user, onChangePassword }) {
         watchId = navigator.geolocation.watchPosition((position) => {
           const userLat = position.coords.latitude;
           const userLng = position.coords.longitude;
-          setUserPos({ lat: userLat, lng: userLng });
+          const accuracy = position.coords.accuracy;
+          setUserPos({ lat: userLat, lng: userLng, accuracy: accuracy });
 
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLat}&lon=${userLng}&zoom=18&addressdetails=1`)
-            .then(res => res.json())
-            .then(data => {
-              if (data && data.display_name) {
-                const addr = data.display_name.split(',').slice(0, 3).join(',');
-                setCurrentAddress(addr);
-              }
-            }).catch(() => {});
+          // Reverse Geocoding via Server Proxy (30s refresh)
+          const now = Date.now();
+          if (!window._lastGeoSearch || now - window._lastGeoSearch > 30000) {
+            window._lastGeoSearch = now;
+            fetch(`/api/geodecode?lat=${userLat}&lng=${userLng}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data && data.display_name) {
+                  const addr = data.display_name.split(',').slice(0, 3).join(',');
+                  setCurrentAddress(addr);
+                } else {
+                  setCurrentAddress('Alamat tidak ditemukan');
+                }
+              }).catch(() => {
+                setCurrentAddress('Gagal memuat alamat');
+                window._lastGeoSearch = now - 20000; // Retry sooner on failure
+              });
+          }
 
           let closestDist = Infinity;
           let closestOffice = null;
@@ -212,14 +230,13 @@ function MobileHome({ user, onChangePassword }) {
       }
     }
 
-    startTracking(settings);
+    if (settings.radius) startTracking(settings);
 
     return () => {
       clearInterval(timer);
-      clearInterval(syncInterval);
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
-  }, [settings, user.nip]);
+  }, [settings.radius, settings.offices]);
 
   const handleAttend = async () => {
     if (status === 'done_in' || status === 'done_out') return;
@@ -289,12 +306,14 @@ function MobileHome({ user, onChangePassword }) {
             <span className="font-bold">{locationStatus}</span>
           </div>
           
-          <div className="mt-2 bg-background/50 backdrop-blur-sm rounded-lg p-3 border border-border/50 max-w-[280px]">
+          <div className="mt-2 bg-background/50 backdrop-blur-sm rounded-lg p-3 border border-border/50 w-full max-w-[320px]">
             <div className="flex items-start gap-2 text-left">
               <MapPin size={14} className="text-primary mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[9px] text-muted uppercase font-bold tracking-wider">Lokasi Anda Saat Ini</p>
-                <p className="text-[11px] font-medium leading-tight line-clamp-2">{currentAddress}</p>
+              <div className="flex-1">
+                <p className="text-[9px] text-muted uppercase font-bold tracking-wider">Lokasi Saat Ini</p>
+                <p className="text-[12px] font-bold leading-tight">
+                  {currentAddress}
+                </p>
               </div>
             </div>
           </div>
